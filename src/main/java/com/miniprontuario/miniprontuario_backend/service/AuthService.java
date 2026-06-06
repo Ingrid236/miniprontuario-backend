@@ -27,6 +27,9 @@ public class AuthService {
         if (dentistRepository.existsByCpf(request.getCpf())) {
             throw new DuplicateResourceException("CPF already registered");
         }
+        if (dentistRepository.existsByCro(request.getCro())) {
+            throw new DuplicateResourceException("CRO already registered");
+        }
 
         Dentist dentist = Dentist.builder()
                 .name(request.getName())
@@ -49,6 +52,27 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(dentist.getId(), dentist.getEmail());
-        return new AuthResponse(token);
+        return AuthResponse.builder()
+                .token(token)
+                .expiresIn(jwtUtil.getExpiration() / 1000)
+                .user(UserResponse.builder()
+                        .id(dentist.getId().toString())
+                        .name(dentist.getName())
+                        .email(dentist.getEmail())
+                        .build())
+                .build();
+    }
+
+    public MeResponse getMe(java.util.UUID dentistId) {
+        Dentist dentist = dentistRepository.findById(dentistId)
+                .orElseThrow(() -> new BusinessException("User not found"));
+        return MeResponse.builder()
+                .id(dentist.getId().toString())
+                .name(dentist.getName())
+                .email(dentist.getEmail())
+                .cpf(dentist.getCpf())
+                .cro(dentist.getCro())
+                .phone(dentist.getPhone())
+                .build();
     }
 }
