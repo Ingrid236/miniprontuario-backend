@@ -9,6 +9,8 @@ import com.miniprontuario.miniprontuario_backend.model.Patient;
 import com.miniprontuario.miniprontuario_backend.repository.DentistRepository;
 import com.miniprontuario.miniprontuario_backend.repository.PatientRepository;
 import com.miniprontuario.miniprontuario_backend.security.DentistPrincipal;
+import com.miniprontuario.miniprontuario_backend.util.CpfValidator;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,6 +38,22 @@ public class PatientService {
     public PatientResponse registerPatient(PatientRequest request) {
         DentistPrincipal dentistPrincipal = getAuthenticatedDentist();
 
+        // Validate CPF digit algorithm
+        if (!CpfValidator.isValid(request.getCpf())) {
+            throw new BusinessException("Invalid CPF: failed digit verification");
+        }
+
+        // Validate birth date: must be in the past and patient age <= 120
+        if (request.getBirthDate() != null) {
+            if (request.getBirthDate().isAfter(LocalDate.now())) {
+                throw new BusinessException("Birth date cannot be in the future");
+            }
+            long age = java.time.Period.between(request.getBirthDate(), LocalDate.now()).getYears();
+            if (age > 120) {
+                throw new BusinessException("Birth date implies an age greater than 120 years");
+            }
+        }
+
         if (patientRepository.existsByDentistIdAndCpf(dentistPrincipal.getId(), request.getCpf())) {
             throw new DuplicateResourceException("Patient with this CPF already registered for this dentist");
         }
@@ -51,6 +69,7 @@ public class PatientService {
                 .phone(request.getPhone())
                 .allergies(request.getAllergies())
                 .systemicDiseases(request.getSystemicDiseases())
+                .medications(request.getMedications())
                 .deleted(false)
                 .build();
 
@@ -91,6 +110,7 @@ public class PatientService {
                 .phone(patient.getPhone())
                 .allergies(patient.getAllergies())
                 .systemicDiseases(patient.getSystemicDiseases())
+                .medications(patient.getMedications())
                 .createdAt(patient.getCreatedAt())
                 .updatedAt(patient.getUpdatedAt())
                 .build();

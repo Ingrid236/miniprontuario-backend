@@ -44,12 +44,21 @@ public class ProcedureService {
             throw new BusinessException("Procedure date cannot be in the future");
         }
 
+        // Validate FDI tooth notation if provided
+        if (request.getTooth() != null && !request.getTooth().isBlank()) {
+            if (!request.getTooth().matches("^[1-8][1-8]$")) {
+                throw new BusinessException("Tooth must use FDI notation (e.g., 11, 48). Format: first digit quadrant (1-8), second digit position (1-8)");
+            }
+        }
+
         Procedure procedure = Procedure.builder()
                 .patient(patient)
                 .date(request.getDate())
                 .description(request.getDescription())
                 .tooth(request.getTooth())
                 .notes(request.getNotes())
+                .status(request.getStatus() != null ? request.getStatus() : "PLANNED")
+                .cost(request.getCost())
                 .deleted(false)
                 .build();
 
@@ -86,10 +95,21 @@ public class ProcedureService {
             throw new BusinessException("Procedure date cannot be in the future");
         }
 
+        // Validate FDI tooth notation if provided
+        if (request.getTooth() != null && !request.getTooth().isBlank()) {
+            if (!request.getTooth().matches("^[1-8][1-8]$")) {
+                throw new BusinessException("Tooth must use FDI notation (e.g., 11, 48). Format: first digit quadrant (1-8), second digit position (1-8)");
+            }
+        }
+
         procedure.setDate(request.getDate());
         procedure.setDescription(request.getDescription());
         procedure.setTooth(request.getTooth());
         procedure.setNotes(request.getNotes());
+        if (request.getStatus() != null) {
+            procedure.setStatus(request.getStatus());
+        }
+        procedure.setCost(request.getCost());
 
         Procedure updated = procedureRepository.save(procedure);
         return mapToResponse(updated);
@@ -114,6 +134,8 @@ public class ProcedureService {
                 .description(procedure.getDescription())
                 .tooth(procedure.getTooth())
                 .notes(procedure.getNotes())
+                .status(procedure.getStatus())
+                .cost(procedure.getCost())
                 .createdAt(procedure.getCreatedAt())
                 .updatedAt(procedure.getUpdatedAt())
                 .build();

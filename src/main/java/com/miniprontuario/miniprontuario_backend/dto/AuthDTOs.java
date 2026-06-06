@@ -58,7 +58,8 @@ public class AuthDTOs {
     @NoArgsConstructor
     @Builder
     public static class AuthResponse {
-        private String token;
+        private String accessToken;
+        private String refreshToken;
         @Builder.Default
         private String type = "Bearer";
         private Long expiresIn;
@@ -88,5 +89,25 @@ public class AuthDTOs {
         private String cpf;
         private String cro;
         private String phone;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class RefreshRequest {
+        @NotBlank(message = "Refresh token is required")
+        private String refreshToken;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class LogoutRequest {
+        @NotBlank(message = "Refresh token is required")
+        private String refreshToken;
     }
 }

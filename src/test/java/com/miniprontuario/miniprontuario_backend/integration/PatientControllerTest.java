@@ -6,9 +6,9 @@ import com.miniprontuario.miniprontuario_backend.model.Dentist;
 import com.miniprontuario.miniprontuario_backend.model.Patient;
 import com.miniprontuario.miniprontuario_backend.repository.DentistRepository;
 import com.miniprontuario.miniprontuario_backend.repository.PatientRepository;
+import com.miniprontuario.miniprontuario_backend.repository.RefreshTokenRepository;
 import com.miniprontuario.miniprontuario_backend.security.JwtUtil;
 import java.time.LocalDate;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +28,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public class PatientControllerTest {
 
+    // Valid Brazilian CPFs for testing
+    private static final String VALID_CPF_ALICE  = "52998224725"; // 529.982.247-25
+    private static final String VALID_CPF_ALICE2 = "11144477735"; // 111.444.777-35
+    private static final String VALID_CPF_BOB    = "87748248800"; // 877.482.488-00
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -43,6 +48,9 @@ public class PatientControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
     private Dentist dentist1;
     private Dentist dentist2;
     private String token1;
@@ -50,6 +58,7 @@ public class PatientControllerTest {
 
     @BeforeEach
     void setUp() {
+        refreshTokenRepository.deleteAll();
         patientRepository.hardDeleteAll();
         dentistRepository.deleteAll();
 
@@ -78,11 +87,12 @@ public class PatientControllerTest {
     void registerPatient_ShouldCreatePatient_WhenValidRequest() throws Exception {
         PatientRequest request = PatientRequest.builder()
                 .name("Alice Smith")
-                .cpf("12345678901")
+                .cpf(VALID_CPF_ALICE)
                 .birthDate(LocalDate.of(1985, 5, 10))
                 .phone("11988888888")
                 .allergies("Penicillin")
                 .systemicDiseases("Diabetes")
+                .medications("Metformin 500mg")
                 .build();
 
         mockMvc.perform(post("/patients")
@@ -91,7 +101,8 @@ public class PatientControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.name").value("Alice Smith"));
+                .andExpect(jsonPath("$.name").value("Alice Smith"))
+                .andExpect(jsonPath("$.medications").value("Metformin 500mg"));
 
         assertFalse(patientRepository.findByDentistId(dentist1.getId()).isEmpty());
     }
@@ -100,7 +111,7 @@ public class PatientControllerTest {
     void registerPatient_ShouldReturnBadRequest_WhenCpfDuplicateForSameDentist() throws Exception {
         PatientRequest request = PatientRequest.builder()
                 .name("Alice Smith")
-                .cpf("12345678901")
+                .cpf(VALID_CPF_ALICE)
                 .birthDate(LocalDate.of(1985, 5, 10))
                 .build();
 
@@ -122,7 +133,7 @@ public class PatientControllerTest {
     void registerPatient_ShouldAllowSameCpf_ForDifferentDentists() throws Exception {
         PatientRequest request = PatientRequest.builder()
                 .name("Alice Smith")
-                .cpf("12345678901")
+                .cpf(VALID_CPF_ALICE)
                 .birthDate(LocalDate.of(1985, 5, 10))
                 .build();
 
@@ -138,6 +149,36 @@ public class PatientControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void registerPatient_ShouldReturnBadRequest_WhenInvalidCpf() throws Exception {
+        PatientRequest request = PatientRequest.builder()
+                .name("Invalid CPF Patient")
+                .cpf("12345678901") // digits don't pass verification algorithm
+                .birthDate(LocalDate.of(1990, 1, 1))
+                .build();
+
+        mockMvc.perform(post("/patients")
+                .header("Authorization", token1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registerPatient_ShouldReturnBadRequest_WhenBirthDateTooOld() throws Exception {
+        PatientRequest request = PatientRequest.builder()
+                .name("Old Patient")
+                .cpf(VALID_CPF_ALICE)
+                .birthDate(LocalDate.of(1800, 1, 1)) // Age > 120 years
+                .build();
+
+        mockMvc.perform(post("/patients")
+                .header("Authorization", token1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
