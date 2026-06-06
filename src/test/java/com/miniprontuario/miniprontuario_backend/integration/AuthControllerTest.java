@@ -84,7 +84,12 @@ public class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.type").value("Bearer"))
+                .andExpect(jsonPath("$.expiresIn").exists())
+                .andExpect(jsonPath("$.user.id").exists())
+                .andExpect(jsonPath("$.user.name").value("Dr. Gabriel"))
+                .andExpect(jsonPath("$.user.email").value("gabriel@example.com"));
     }
 
     @Test
@@ -141,5 +146,102 @@ public class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req2)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_ShouldReturnBadRequest_WhenDuplicateCro() throws Exception {
+        RegisterRequest req1 = RegisterRequest.builder()
+                .name("Dr. Gabriel")
+                .email("gabriel@example.com")
+                .password("password123")
+                .cpf("12345678901")
+                .cro("12345")
+                .build();
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req1)));
+
+        RegisterRequest req2 = RegisterRequest.builder()
+                .name("Dr. Gabriel Second")
+                .email("gabriel2@example.com")
+                .password("password123")
+                .cpf("12345678902")
+                .cro("12345")
+                .build();
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req2)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_ShouldReturnBadRequest_WhenPasswordTooShort() throws Exception {
+        RegisterRequest request = RegisterRequest.builder()
+                .name("Dr. Gabriel")
+                .email("gabriel@example.com")
+                .password("short")
+                .cpf("12345678901")
+                .cro("12345")
+                .build();
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getMe_ShouldReturnProfile_WhenAuthenticated() throws Exception {
+        RegisterRequest regRequest = RegisterRequest.builder()
+                .name("Dr. Gabriel")
+                .email("gabriel@example.com")
+                .password("password123")
+                .cpf("12345678901")
+                .cro("12345")
+                .phone("11999999999")
+                .build();
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(regRequest)))
+                .andExpect(status().isCreated());
+
+        LoginRequest loginRequest = LoginRequest.builder()
+                .email("gabriel@example.com")
+                .password("password123")
+                .build();
+
+        String loginResponse = mockMvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        String token = objectMapper.readTree(loginResponse).get("token").asText();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/auth/me")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.name").value("Dr. Gabriel"))
+                .andExpect(jsonPath("$.email").value("gabriel@example.com"))
+                .andExpect(jsonPath("$.cpf").value("12345678901"))
+                .andExpect(jsonPath("$.cro").value("12345"))
+                .andExpect(jsonPath("$.phone").value("11999999999"));
+    }
+
+    @Test
+    void getMe_ShouldReturnUnauthorized_WhenNoToken() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/auth/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getMe_ShouldReturnUnauthorized_WhenInvalidToken() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/auth/me")
+                .header("Authorization", "Bearer invalidtoken"))
+                .andExpect(status().isUnauthorized());
     }
 }

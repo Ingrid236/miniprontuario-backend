@@ -11,4 +11,5 @@ public interface DentistRepository extends JpaRepository<Dentist, UUID> {
     Optional<Dentist> findByEmail(String email);
     boolean existsByEmail(String email);
     boolean existsByCpf(String cpf);
+    boolean existsByCro(String cro);
 }

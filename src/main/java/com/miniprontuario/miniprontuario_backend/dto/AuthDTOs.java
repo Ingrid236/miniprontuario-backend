@@ -25,7 +25,7 @@ public class AuthDTOs {
         private String email;
 
         @NotBlank(message = "Password is required")
-        @Size(min = 6, message = "Password must be at least 6 characters long")
+        @Size(min = 8, message = "Password must be at least 8 characters long")
         private String password;
 
         @NotBlank(message = "CPF is required")
@@ -56,7 +56,37 @@ public class AuthDTOs {
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
+    @Builder
     public static class AuthResponse {
         private String token;
+        @Builder.Default
+        private String type = "Bearer";
+        private Long expiresIn;
+        private UserResponse user;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class UserResponse {
+        private String id;
+        private String name;
+        private String email;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class MeResponse {
+        private String id;
+        private String name;
+        private String email;
+        private String cpf;
+        private String cro;
+        private String phone;
     }
 }

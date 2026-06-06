@@ -32,4 +32,11 @@ public class AuthController {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/me")
+    @io.swagger.v3.oas.annotations.Operation(summary = "Get current authenticated dentist profile")
+    public ResponseEntity<MeResponse> getMe(@org.springframework.security.core.annotation.AuthenticationPrincipal com.miniprontuario.miniprontuario_backend.security.DentistPrincipal principal) {
+        MeResponse response = authService.getMe(principal.getId());
+        return ResponseEntity.ok(response);
+    }
 }

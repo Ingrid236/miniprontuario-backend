@@ -30,7 +30,7 @@ public class Dentist extends BaseEntity {
     @Column(nullable = false, unique = true, length = 14)
     private String cpf;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String cro;
 
     private String phone;
