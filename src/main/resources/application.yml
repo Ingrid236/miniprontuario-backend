@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: miniprontuario-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/miniprontuario_db
+    username: postgres
+    password: 12345
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+jwt:
+  secret: 9a78e727589f2a975dfbf5e1582236968d904b68e9a2632b71d60db8311ebc4b
+  expiration: 86400000 # 24 hours in ms

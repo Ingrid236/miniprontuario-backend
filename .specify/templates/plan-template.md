@@ -40,7 +40,13 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] Does this plan propose well-documented REST APIs (API First)?
+- [ ] Does this plan maintain strict Layered Architecture & Clean Architecture separation?
+- [ ] Are business rules enforced exclusively in the Services layer?
+- [ ] Is Test-Driven Development (TDD) strategy defined?
+- [ ] Are Security, Authentication, and Input Validation considered?
+- [ ] Does the plan align with the defined Technical Stack & Constraints?
+- [ ] Does the plan include Observability (Logging/Error Handling)?
 
 ## Project Structure
 

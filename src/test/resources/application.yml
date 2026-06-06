@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: miniprontuario-backend-test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  flyway:
+    enabled: false # Disable migrations for simple H2 JPA schema generation in unit tests
+
+jwt:
+  secret: 9a78e727589f2a975dfbf5e1582236968d904b68e9a2632b71d60db8311ebc4b
+  expiration: 86400000
