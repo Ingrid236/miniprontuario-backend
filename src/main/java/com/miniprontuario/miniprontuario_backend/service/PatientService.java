@@ -101,6 +101,45 @@ public class PatientService {
         patientRepository.save(patient);
     }
 
+    @Transactional
+    public PatientResponse updatePatient(UUID id, PatientRequest request) {
+        DentistPrincipal dentistPrincipal = getAuthenticatedDentist();
+        Patient patient = patientRepository.findByIdAndDentistId(id, dentistPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found or unauthorized"));
+
+        // Validate CPF if it has changed
+        if (!patient.getCpf().equals(request.getCpf())) {
+            if (!CpfValidator.isValid(request.getCpf())) {
+                throw new BusinessException("Invalid CPF: failed digit verification");
+            }
+            if (patientRepository.existsByDentistIdAndCpf(dentistPrincipal.getId(), request.getCpf())) {
+                throw new DuplicateResourceException("Patient with this CPF already registered for this dentist");
+            }
+            patient.setCpf(request.getCpf());
+        }
+
+        // Validate birth date: must be in the past and patient age <= 120
+        if (request.getBirthDate() != null) {
+            if (request.getBirthDate().isAfter(LocalDate.now())) {
+                throw new BusinessException("Birth date cannot be in the future");
+            }
+            long age = java.time.Period.between(request.getBirthDate(), LocalDate.now()).getYears();
+            if (age > 120) {
+                throw new BusinessException("Birth date implies an age greater than 120 years");
+            }
+            patient.setBirthDate(request.getBirthDate());
+        }
+
+        patient.setName(request.getName());
+        patient.setPhone(request.getPhone());
+        patient.setAllergies(request.getAllergies());
+        patient.setSystemicDiseases(request.getSystemicDiseases());
+        patient.setMedications(request.getMedications());
+
+        Patient saved = patientRepository.save(patient);
+        return mapToResponse(saved);
+    }
+
     private PatientResponse mapToResponse(Patient patient) {
         return PatientResponse.builder()
                 .id(patient.getId())

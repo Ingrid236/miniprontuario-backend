@@ -42,6 +42,7 @@ public class AuthService {
         }
 
         // Validate CRO format (e.g., SP-12345 or SP123456)
+        System.out.println("DEBUG: Received CRO for validation: [" + request.getCro() + "]");
         if (!request.getCro().toUpperCase().matches(CRO_PATTERN)) {
             throw new BusinessException("CRO format is invalid. Expected format: <UF>-<digits> (e.g., SP-12345)");
         }

@@ -43,6 +43,9 @@ public class PatientControllerTest {
     private PatientRepository patientRepository;
 
     @Autowired
+    private com.miniprontuario.miniprontuario_backend.repository.ProcedureRepository procedureRepository;
+
+    @Autowired
     private JwtUtil jwtUtil;
 
     @Autowired
@@ -59,6 +62,7 @@ public class PatientControllerTest {
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
+        procedureRepository.hardDeleteAll();
         patientRepository.hardDeleteAll();
         dentistRepository.deleteAll();
 
@@ -218,6 +222,124 @@ public class PatientControllerTest {
         // Get should now return 404 because SQLRestriction deleted = false filters it out
         mockMvc.perform(get("/patients/" + p1.getId())
                 .header("Authorization", token1))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updatePatient_ShouldUpdatePatient_WhenValidRequest() throws Exception {
+        Patient p1 = Patient.builder()
+                .dentist(dentist1)
+                .name("Alice Smith")
+                .cpf(VALID_CPF_ALICE)
+                .birthDate(LocalDate.of(1985, 5, 10))
+                .phone("11988888888")
+                .build();
+        p1 = patientRepository.save(p1);
+
+        PatientRequest updateRequest = PatientRequest.builder()
+                .name("Alice Cooper")
+                .cpf(VALID_CPF_ALICE)
+                .birthDate(LocalDate.of(1985, 5, 10))
+                .phone("11999999999")
+                .allergies("Nuts")
+                .systemicDiseases("Hypertension")
+                .medications("Lisinopril")
+                .build();
+
+        mockMvc.perform(put("/patients/" + p1.getId())
+                .header("Authorization", token1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Alice Cooper"))
+                .andExpect(jsonPath("$.phone").value("11999999999"))
+                .andExpect(jsonPath("$.allergies").value("Nuts"))
+                .andExpect(jsonPath("$.systemicDiseases").value("Hypertension"))
+                .andExpect(jsonPath("$.medications").value("Lisinopril"));
+
+        Patient updated = patientRepository.findById(p1.getId()).orElseThrow();
+        assertEquals("Alice Cooper", updated.getName());
+        assertEquals("11999999999", updated.getPhone());
+    }
+
+    @Test
+    void updatePatient_ShouldAllowCpfChange_WhenNewCpfIsValidAndUnique() throws Exception {
+        Patient p1 = Patient.builder()
+                .dentist(dentist1)
+                .name("Alice Smith")
+                .cpf(VALID_CPF_ALICE)
+                .birthDate(LocalDate.of(1985, 5, 10))
+                .build();
+        p1 = patientRepository.save(p1);
+
+        PatientRequest updateRequest = PatientRequest.builder()
+                .name("Alice Smith")
+                .cpf(VALID_CPF_ALICE2) // Change to different valid CPF
+                .birthDate(LocalDate.of(1985, 5, 10))
+                .build();
+
+        mockMvc.perform(put("/patients/" + p1.getId())
+                .header("Authorization", token1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cpf").value(VALID_CPF_ALICE2));
+    }
+
+    @Test
+    void updatePatient_ShouldReturnBadRequest_WhenNewCpfIsDuplicate() throws Exception {
+        Patient p1 = Patient.builder().dentist(dentist1).name("Alice").cpf(VALID_CPF_ALICE).birthDate(LocalDate.of(1985, 5, 10)).build();
+        p1 = patientRepository.save(p1);
+
+        Patient p2 = Patient.builder().dentist(dentist1).name("Bob").cpf(VALID_CPF_BOB).birthDate(LocalDate.of(1990, 1, 1)).build();
+        patientRepository.save(p2);
+
+        PatientRequest updateRequest = PatientRequest.builder()
+                .name("Alice")
+                .cpf(VALID_CPF_BOB) // Try to set Bob's CPF on Alice
+                .birthDate(LocalDate.of(1985, 5, 10))
+                .build();
+
+        mockMvc.perform(put("/patients/" + p1.getId())
+                .header("Authorization", token1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updatePatient_ShouldReturnBadRequest_WhenBirthDateTooOld() throws Exception {
+        Patient p1 = Patient.builder().dentist(dentist1).name("Alice").cpf(VALID_CPF_ALICE).birthDate(LocalDate.of(1985, 5, 10)).build();
+        p1 = patientRepository.save(p1);
+
+        PatientRequest updateRequest = PatientRequest.builder()
+                .name("Alice")
+                .cpf(VALID_CPF_ALICE)
+                .birthDate(LocalDate.of(1800, 1, 1)) // Age > 120
+                .build();
+
+        mockMvc.perform(put("/patients/" + p1.getId())
+                .header("Authorization", token1)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updatePatient_ShouldReturnNotFound_WhenPatientBelongsToAnotherDentist() throws Exception {
+        Patient p2 = Patient.builder().dentist(dentist2).name("Patient Two").cpf(VALID_CPF_BOB).birthDate(LocalDate.now()).build();
+        p2 = patientRepository.save(p2);
+
+        PatientRequest updateRequest = PatientRequest.builder()
+                .name("Updated Name")
+                .cpf(VALID_CPF_BOB)
+                .birthDate(LocalDate.now())
+                .build();
+
+        mockMvc.perform(put("/patients/" + p2.getId())
+                .header("Authorization", token1) // Dentist 1 trying to edit Dentist 2's patient
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isNotFound());
     }
 }

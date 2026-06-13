@@ -33,6 +33,12 @@ public class ProcedureController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/procedures/{id}")
+    public ResponseEntity<ProcedureResponse> getProcedure(@PathVariable UUID id) {
+        ProcedureResponse response = procedureService.getProcedure(id);
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("/procedures/{id}")
     public ResponseEntity<ProcedureResponse> updateProcedure(
             @PathVariable UUID id,

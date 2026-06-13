@@ -33,6 +33,9 @@ public class AuthControllerTest {
     private com.miniprontuario.miniprontuario_backend.repository.PatientRepository patientRepository;
 
     @Autowired
+    private com.miniprontuario.miniprontuario_backend.repository.ProcedureRepository procedureRepository;
+
+    @Autowired
     private com.miniprontuario.miniprontuario_backend.repository.RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
@@ -48,6 +51,7 @@ public class AuthControllerTest {
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
+        procedureRepository.hardDeleteAll();
         patientRepository.hardDeleteAll();
         dentistRepository.deleteAll();
     }

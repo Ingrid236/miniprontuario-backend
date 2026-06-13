@@ -115,6 +115,13 @@ public class ProcedureService {
         return mapToResponse(updated);
     }
 
+    public ProcedureResponse getProcedure(UUID id) {
+        DentistPrincipal dentistPrincipal = getAuthenticatedDentist();
+        Procedure procedure = procedureRepository.findByIdAndPatientDentistId(id, dentistPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Procedure not found or unauthorized"));
+        return mapToResponse(procedure);
+    }
+
     @Transactional
     public void deleteProcedure(UUID id) {
         DentistPrincipal dentistPrincipal = getAuthenticatedDentist();
