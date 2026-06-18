@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/miniprontuario_db
     username: postgres
-    password: 12345
+    password: postgres
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -16,6 +16,17 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  ai:
+    openai:
+      api-key: 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
+      base-url: https://api.groq.com/openai
+      chat:
+        options:
+          model: llama-3.1-8b-instant
+      audio:
+        transcription:
+          options:
+            model: whisper-large-v3
 
 jwt:
   secret: 9a78e727589f2a975dfbf5e1582236968d904b68e9a2632b71d60db8311ebc4b
