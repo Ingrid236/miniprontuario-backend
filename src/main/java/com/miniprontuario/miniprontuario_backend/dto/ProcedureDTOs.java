@@ -2,6 +2,7 @@ package com.miniprontuario.miniprontuario_backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -27,6 +28,8 @@ public class ProcedureDTOs {
 
         private String tooth;
         private String notes;
+        private String status;
+        private BigDecimal cost;
     }
 
     @Getter
@@ -41,6 +44,8 @@ public class ProcedureDTOs {
         private String description;
         private String tooth;
         private String notes;
+        private String status;
+        private BigDecimal cost;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

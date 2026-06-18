@@ -48,6 +48,9 @@ public class Patient extends BaseEntity {
     @Column(name = "systemic_diseases")
     private String systemicDiseases;
 
+    @Column(columnDefinition = "TEXT")
+    private String medications;
+
     @Column(nullable = false)
     private boolean deleted = false;
 }

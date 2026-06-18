@@ -30,4 +30,4 @@ spring:
 
 jwt:
   secret: 9a78e727589f2a975dfbf5e1582236968d904b68e9a2632b71d60db8311ebc4b
-  expiration: 86400000 # 24 hours in ms
+  expiration: 1800000 # 30 minutes in ms (VA2 requirement)
