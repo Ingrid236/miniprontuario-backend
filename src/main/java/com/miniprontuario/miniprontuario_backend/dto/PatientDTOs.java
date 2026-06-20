@@ -37,6 +37,8 @@ public class PatientDTOs {
         private String allergies;
 
         private String systemicDiseases;
+
+        private String medications;
     }
 
     @Getter
@@ -52,6 +54,7 @@ public class PatientDTOs {
         private String phone;
         private String allergies;
         private String systemicDiseases;
+        private String medications;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

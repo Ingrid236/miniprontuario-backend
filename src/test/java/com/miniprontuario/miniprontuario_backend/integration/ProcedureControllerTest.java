@@ -8,6 +8,7 @@ import com.miniprontuario.miniprontuario_backend.model.Procedure;
 import com.miniprontuario.miniprontuario_backend.repository.DentistRepository;
 import com.miniprontuario.miniprontuario_backend.repository.PatientRepository;
 import com.miniprontuario.miniprontuario_backend.repository.ProcedureRepository;
+import com.miniprontuario.miniprontuario_backend.repository.RefreshTokenRepository;
 import com.miniprontuario.miniprontuario_backend.security.JwtUtil;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -53,6 +54,9 @@ public class ProcedureControllerTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
     private Dentist dentist1;
     private Dentist dentist2;
     private Patient patient1;
@@ -62,6 +66,7 @@ public class ProcedureControllerTest {
 
     @BeforeEach
     void setUp() {
+        refreshTokenRepository.deleteAll();
         procedureRepository.hardDeleteAll();
         patientRepository.hardDeleteAll();
         dentistRepository.deleteAll();

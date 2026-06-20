@@ -1,6 +1,7 @@
 package com.miniprontuario.miniprontuario_backend.unit;
 
 import com.miniprontuario.miniprontuario_backend.dto.PatientDTOs.*;
+import com.miniprontuario.miniprontuario_backend.exception.BusinessException;
 import com.miniprontuario.miniprontuario_backend.exception.DuplicateResourceException;
 import com.miniprontuario.miniprontuario_backend.model.Dentist;
 import com.miniprontuario.miniprontuario_backend.model.Patient;
@@ -26,6 +27,9 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PatientServiceTest {
+
+    // Known-valid Brazilian CPF (529.982.247-25)
+    private static final String VALID_CPF = "52998224725";
 
     @Mock
     private PatientRepository patientRepository;
@@ -56,17 +60,17 @@ public class PatientServiceTest {
     void registerPatient_ShouldCreatePatient_WhenValidRequest() {
         PatientRequest request = PatientRequest.builder()
                 .name("John Doe")
-                .cpf("98765432100")
+                .cpf(VALID_CPF)
                 .birthDate(LocalDate.of(1990, 1, 1))
                 .build();
 
-        when(patientRepository.existsByDentistIdAndCpf(principal.getId(), "98765432100")).thenReturn(false);
+        when(patientRepository.existsByDentistIdAndCpf(principal.getId(), VALID_CPF)).thenReturn(false);
         when(dentistRepository.findById(principal.getId())).thenReturn(Optional.of(dentist));
 
         Patient patient = Patient.builder()
                 .dentist(dentist)
                 .name("John Doe")
-                .cpf("98765432100")
+                .cpf(VALID_CPF)
                 .birthDate(LocalDate.of(1990, 1, 1))
                 .build();
         patient.setId(UUID.randomUUID());
@@ -84,13 +88,37 @@ public class PatientServiceTest {
     void registerPatient_ShouldThrowException_WhenCpfDuplicate() {
         PatientRequest request = PatientRequest.builder()
                 .name("John Doe")
-                .cpf("98765432100")
+                .cpf(VALID_CPF)
                 .birthDate(LocalDate.of(1990, 1, 1))
                 .build();
 
-        when(patientRepository.existsByDentistIdAndCpf(principal.getId(), "98765432100")).thenReturn(true);
+        when(patientRepository.existsByDentistIdAndCpf(principal.getId(), VALID_CPF)).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class, () -> patientService.registerPatient(request));
+        verify(patientRepository, never()).save(any());
+    }
+
+    @Test
+    void registerPatient_ShouldThrowException_WhenCpfInvalid() {
+        PatientRequest request = PatientRequest.builder()
+                .name("John Doe")
+                .cpf("12345678901") // invalid CPF digits
+                .birthDate(LocalDate.of(1990, 1, 1))
+                .build();
+
+        assertThrows(BusinessException.class, () -> patientService.registerPatient(request));
+        verify(patientRepository, never()).save(any());
+    }
+
+    @Test
+    void registerPatient_ShouldThrowException_WhenAgeOver120() {
+        PatientRequest request = PatientRequest.builder()
+                .name("Old Patient")
+                .cpf(VALID_CPF)
+                .birthDate(LocalDate.of(1800, 1, 1))
+                .build();
+
+        assertThrows(BusinessException.class, () -> patientService.registerPatient(request));
         verify(patientRepository, never()).save(any());
     }
 }
